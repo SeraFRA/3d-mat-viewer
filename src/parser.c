@@ -114,7 +114,7 @@ static bool match_constant(const char *name, double *out_val) {
     return false;
 }
 
-static bool is_operand_or_rparen(TokenType type) {
+static bool is_operand_or_rparen(MathTokenType type) {
     return type == TOKEN_NUMBER ||
            type == TOKEN_VARIABLE ||
            type == TOKEN_CONSTANT ||
@@ -295,7 +295,7 @@ static ParseStatus tokenize_expression(const char *expr, ParsedFunction *pf, cha
     return PARSE_SUCCESS;
 }
 
-static bool emit_operator_instruction(ParsedFunction *pf, TokenType op_type) {
+static bool emit_operator_instruction(ParsedFunction *pf, MathTokenType op_type) {
     Instruction instr;
     memset(&instr, 0, sizeof(Instruction));
 

@@ -4,6 +4,7 @@
 #include "evaluator.h"
 #include "mesh.h"
 #include "marching_cubes.h"
+#include "viewer.h"
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
@@ -18,7 +19,7 @@ static void evaluate_and_display(ParsedFunction *pf, double x, double y, double 
     }
 }
 
-static void process_expression(const char *expr, const char *export_obj_path) {
+static void process_expression_cli(const char *expr, const char *export_obj_path) {
     ParsedFunction pf = {0};
     char err_msg[256] = {0};
 
@@ -33,19 +34,13 @@ static void process_expression(const char *expr, const char *export_obj_path) {
         return;
     }
 
-    // Display parsed tokens dynamic list
     parsed_function_print_tokens(&pf);
     printf("\n");
-
-    // Display detected variables dynamic list
     parsed_function_print_variables(&pf);
     printf("\n");
-
-    // Display postfix operations dynamic list
     parsed_function_print_instructions(&pf);
     printf("\n");
 
-    // Sample evaluations in 3D space
     printf("=== 3D SPACE EVALUATIONS ===\n");
     evaluate_and_display(&pf, 0.0, 0.0, 0.0);
     evaluate_and_display(&pf, 1.0, 0.0, 0.0);
@@ -54,7 +49,6 @@ static void process_expression(const char *expr, const char *export_obj_path) {
     evaluate_and_display(&pf, 1.0, 1.0, 1.0);
     evaluate_and_display(&pf, 2.0, -1.0, 0.5);
 
-    // Marching cubes 3D isosurface extraction demo
     printf("\n=== 3D MARCHING CUBES ISOSURFACE EXTRACTION ===\n");
     Mesh3D mesh;
     mesh3d_init(&mesh);
@@ -67,12 +61,8 @@ static void process_expression(const char *expr, const char *export_obj_path) {
         if (export_obj_path) {
             if (mesh3d_export_obj(&mesh, export_obj_path)) {
                 printf("  [SUCCESS] Exported 3D mesh to '%s'\n", export_obj_path);
-            } else {
-                printf("  [ERROR] Failed to export OBJ to '%s'\n", export_obj_path);
             }
         }
-    } else {
-        printf("  [ERROR] Marching Cubes extraction failed\n");
     }
 
     mesh3d_free(&mesh);
@@ -83,24 +73,22 @@ int main(int argc, char **argv) {
     setvbuf(stdout, NULL, _IONBF, 0);
     setvbuf(stderr, NULL, _IONBF, 0);
 
-    printf("======================================================\n");
-    printf("  3D ENGINE CORE - MATHEMATICAL FUNCTION PARSER & MC  \n");
-    printf("======================================================\n");
-
-    if (argc > 1) {
-        for (int i = 1; i < argc; i++) {
-            process_expression(argv[i], NULL);
+    // Check if CLI batch mode is requested via --cli
+    if (argc > 1 && (strcmp(argv[1], "--cli") == 0 || strcmp(argv[1], "-c") == 0)) {
+        printf("======================================================\n");
+        printf("  3D ENGINE CORE - CLI BATCH PARSER & MC              \n");
+        printf("======================================================\n");
+        for (int i = 2; i < argc; i++) {
+            process_expression_cli(argv[i], NULL);
+        }
+        if (argc == 2) {
+            process_expression_cli("x^2 + y^2 + z^2 - 1", "build/demo_sphere.obj");
+            process_expression_cli("sin(x) * cos(y) + sin(y) * cos(z) + sin(z) * cos(x)", "build/demo_gyroid.obj");
         }
         return 0;
     }
 
-    // Default demonstration functions
-    process_expression("x^2 + y^2 + z^2 - 1", "build/demo_sphere.obj");
-    process_expression("sin(x) * cos(y) + sin(y) * cos(z) + sin(z) * cos(x)", "build/demo_gyroid.obj");
-    process_expression("x^2 - y^2 - z", "build/demo_saddle.obj");
-
-    printf("\n[INFO] You can pass any expression to parse, e.g.:\n");
-    printf("       ./engine_parser \"x^2 + y^2 + z^2 - 4\"\n");
-
-    return 0;
+    // Launch interactive 3D viewer
+    const char *initial_formula = (argc > 1) ? argv[1] : "x^2 + y^2 + z^2 - 1";
+    return viewer_run(initial_formula);
 }

@@ -1,7 +1,7 @@
 #include "token.h"
 #include <stdio.h>
 
-const char *token_type_to_string(TokenType type) {
+const char *token_type_to_string(MathTokenType type) {
     switch (type) {
         case TOKEN_NUMBER:   return "NUMBER";
         case TOKEN_VARIABLE: return "VARIABLE";
@@ -22,7 +22,7 @@ const char *token_type_to_string(TokenType type) {
     }
 }
 
-bool token_is_operator(TokenType type) {
+bool token_is_operator(MathTokenType type) {
     return type == TOKEN_OP_ADD ||
            type == TOKEN_OP_SUB ||
            type == TOKEN_OP_MUL ||
@@ -31,7 +31,7 @@ bool token_is_operator(TokenType type) {
            type == TOKEN_OP_NEG;
 }
 
-int token_operator_precedence(TokenType type) {
+int token_operator_precedence(MathTokenType type) {
     switch (type) {
         case TOKEN_OP_ADD:
         case TOKEN_OP_SUB:
@@ -48,7 +48,7 @@ int token_operator_precedence(TokenType type) {
     }
 }
 
-bool token_is_right_associative(TokenType type) {
+bool token_is_right_associative(MathTokenType type) {
     return type == TOKEN_OP_POW || type == TOKEN_OP_NEG;
 }
 

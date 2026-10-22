@@ -22,10 +22,10 @@ typedef enum {
     TOKEN_COMMA,
     TOKEN_EOF,
     TOKEN_UNKNOWN
-} TokenType;
+} MathTokenType;
 
 typedef struct {
-    TokenType type;
+    MathTokenType type;
     double value;                     // For TOKEN_NUMBER or TOKEN_CONSTANT
     char name[MAX_IDENTIFIER_LEN];    // For variable or function name
     size_t position;                  // Character offset in expression
@@ -34,22 +34,22 @@ typedef struct {
 /**
  * @brief Get human-readable string representation of token type.
  */
-const char *token_type_to_string(TokenType type);
+const char *token_type_to_string(MathTokenType type);
 
 /**
  * @brief Check if a token type is an operator.
  */
-bool token_is_operator(TokenType type);
+bool token_is_operator(MathTokenType type);
 
 /**
  * @brief Get operator precedence level (higher means evaluated first).
  */
-int token_operator_precedence(TokenType type);
+int token_operator_precedence(MathTokenType type);
 
 /**
  * @brief Check if operator is right-associative (e.g. exponentiation `^`, unary minus).
  */
-bool token_is_right_associative(TokenType type);
+bool token_is_right_associative(MathTokenType type);
 
 /**
  * @brief Print a token to standard output for debugging/inspection.
