@@ -1,32 +1,40 @@
 # 3D Mathematical Engine Core (C)
 
-Motore grafico e computazionale 3D per la rappresentazione di funzioni matematiche in tre variabili $f(x, y, z)$. Il nucleo computazionale ad altissime prestazioni è scritto in C puro, progettato per interfacciarsi con un visualizzatore 3D (ad es. in Python via `ctypes` / OpenGL / VisPy).
+Motore grafico e computazionale 3D per la rappresentazione e triangolazione di funzioni matematiche in tre variabili $f(x, y, z)$. Il nucleo computazionale ad altissime prestazioni è scritto in C puro, progettato per interfacciarsi con un visualizzatore 3D (ad es. in Python via `ctypes` / OpenGL / VisPy).
 
 ---
 
 ## 🏗️ Architettura del Nucleo C
 
-Il sistema è strutturato secondo i principi di massima efficienza cache-friendly per l'elaborazione di campi scalari 3D:
+Il sistema è strutturato secondo i principi di massima efficienza cache-friendly per l'elaborazione di campi scalari e mesh 3D:
 
-1. **`DynamicList` (`dynamic_list.h`, `dynamic_list.c`)**:
+1. **`DynamicList` ([`include/dynamic_list.h`](file:///C:/Users/franc/Desktop/Progetti/progetto%203d/include/dynamic_list.h), [`src/dynamic_list.c`](file:///C:/Users/franc/Desktop/Progetti/progetto%203d/src/dynamic_list.c))**:
    - Vettore dinamico generico a memoria contigua con fattore di crescita esponenziale.
    - Fornisce operazioni `init`, `push`, `pop`, `peek`, `get`, `clear`, `free`.
-   - Utilizzato sia per memorizzare i token, sia per la lista dinamica delle variabili rilevate, sia per il bytecode RPN delle operazioni.
 
-2. **Tokenizer & Lexer (`token.h`, `token.c`)**:
-   - Scansiona la stringa matematica gestendo costanti (`pi`, `e`), numeri floating point in notazione scientifica, operatori binari e unari (`+`, `-`, `*`, `/`, `^`, unary `-`).
+2. **Tokenizer & Lexer ([`include/token.h`](file:///C:/Users/franc/Desktop/Progetti/progetto%203d/include/token.h), [`src/token.c`](file:///C:/Users/franc/Desktop/Progetti/progetto%203d/src/token.c))**:
+   - Scansiona la stringa matematica gestendo costanti (`pi`, `e`), numeri floating point in notazione scientifica, operatori binari e unari (`+`, `-`, `*`, `/`, `^`, negazione unaria).
    - Identifica le chiamate a funzioni matematiche (`sin`, `cos`, `tan`, `sqrt`, `exp`, `log`, `abs`, `min`, `max`, ecc.).
    - Supporta la **moltiplicazione implicita** (ad es. `2x`, `x y`, `(x+1)(y-1)`).
 
-3. **Parser Shunting-Yard (`parser.h`, `parser.c`)**:
-   - Converte l'espressione in notazione postfissa (RPN / Reverse Polish Notation) conservando la precedenza corretta degli operatori e l'associatività a destra di potenze e negazioni.
-   - Isola e registra automaticamente le variabili uniche (es. `x`, `y`, `z`) in una **lista dinamica di variabili** (`pf->variables`), assegnando a ciascuna uno slot indice numerico per lookup a tempo $O(1)$.
+3. **Parser Shunting-Yard ([`include/parser.h`](file:///C:/Users/franc/Desktop/Progetti/progetto%203d/include/parser.h), [`src/parser.c`](file:///C:/Users/franc/Desktop/Progetti/progetto%203d/src/parser.c))**:
+   - Converte l'espressione in notazione postfissa (RPN / Reverse Polish Notation) conservando la precedenza corretta degli operatori e l'associatività a destra.
+   - Registra le variabili uniche (es. `x`, `y`, `z`) in una **lista dinamica di variabili** (`pf->variables`).
    - Produce una **lista dinamica di istruzioni** (`pf->instructions`), azzerando il costo di parsing durante i cicli di rendering 3D.
 
-4. **Valutatore a Stack (`evaluator.h`, `evaluator.c`)**:
+4. **Valutatore a Stack ([`include/evaluator.h`](file:///C:/Users/franc/Desktop/Progetti/progetto%203d/include/evaluator.h), [`src/evaluator.c`](file:///C:/Users/franc/Desktop/Progetti/progetto%203d/src/evaluator.c))**:
    - Esegue la sequenza di istruzioni in tempo $O(N)$ lineare senza ricorsione.
    - Fornisce `eval_function_3d(pf, x, y, z, &result)` ottimizzato per lo spazio 3D.
-   - Fornisce `eval_function_grid_3d(...)` per calcolare griglie voxel tridimensionali contigue (fondamentale per Marching Cubes / Raymarching / isosuperfici).
+   - Fornisce `eval_function_grid_3d(...)` per campionare griglie voxel tridimensionali contigue.
+
+5. **Mesh 3D & Wavefront OBJ ([`include/mesh.h`](file:///C:/Users/franc/Desktop/Progetti/progetto%203d/include/mesh.h), [`src/mesh.c`](file:///C:/Users/franc/Desktop/Progetti/progetto%203d/src/mesh.c))**:
+   - Buffer contigui per vertici `(x, y, z)`, normali `(nx, ny, nz)` e indici di triangolazione `uint32_t`.
+   - Funzione di esportazione Wavefront `.OBJ` nativa (`mesh3d_export_obj`).
+
+6. **Algoritmo Marching Cubes ([`include/marching_cubes.h`](file:///C:/Users/franc/Desktop/Progetti/progetto%203d/include/marching_cubes.h), [`src/marching_cubes.c`](file:///C:/Users/franc/Desktop/Progetti/progetto%203d/src/marching_cubes.c), [`include/marching_cubes_tables.h`](file:///C:/Users/franc/Desktop/Progetti/progetto%203d/include/marching_cubes_tables.h))**:
+   - Tabella canonica a 256 configurazioni per estrazione poligonale da campi scalari continui.
+   - Calcolo delle normali analitiche mediante gradiente a differenze finite: $\mathbf{n} = \frac{\nabla F}{\|\nabla F\|}$.
+   - Supporto nativo per **chunking** nello spazio infinito (`marching_cubes_extract_chunk`).
 
 ---
 
@@ -36,7 +44,7 @@ Il sistema è strutturato secondo i principi di massima efficienza cache-friendl
 ```cmd
 build.bat
 ```
-Lo script compila i test unitari (`build\run_tests.exe`), lo strumento CLI (`build\engine_parser.exe`) ed esegue immediatamente la suite di test completa.
+Lo script compila i test del parser (`build\run_tests.exe`), i test di Marching Cubes (`build\run_mc_tests.exe`), lo strumento CLI (`build\engine_parser.exe`) ed esegue entrambe le suite di test.
 
 ### 2. Esecuzione con Make (MinGW / GCC)
 ```bash
@@ -44,47 +52,14 @@ make
 make test
 ```
 
-### 3. Utilizzo Interattivo da Riga di Comando
-Puoi passare qualsiasi funzione a tre variabili come argomento:
+### 3. Utilizzo da Riga di Comando
 ```cmd
-build\engine_parser.exe "x^2 + y^2 + z^2 - 1" "sin(x)*cos(y) + z" "exp(-(x^2+y^2+z^2))"
+build\engine_parser.exe "x^2 + y^2 + z^2 - 1" "sin(x)*cos(y) + sin(y)*cos(z) + sin(z)*cos(x)"
 ```
 
-Output di esempio:
+Output:
 ```text
-Parsing expression: "x^2 + y^2 + z^2 - 1"
-=== TOKENS (13) ===
-[00] [Token VARIABLE name='x' pos=0]
-[01] [Token OP_POW (^) pos=1]
-[02] [Token NUMBER val=2 pos=2]
-...
-=== VARIABLES (3) ===
-Slot #0: 'x'
-Slot #1: 'y'
-Slot #2: 'z'
-
-=== POSTFIX INSTRUCTIONS / OPERATIONS (13) ===
-[00] LOAD_VAR 'x' (slot 0)
-[01] LOAD_NUM 2
-[02] OP_POW (^)
-...
-=== 3D SPACE EVALUATIONS ===
-  f(0, 0, 0) = -1
-  f(1, 0, 0) = 0
-  f(0, 1, 0) = 0
-  f(0, 0, 1) = 0
-  f(1, 1, 1) = 2
+=== 3D MARCHING CUBES ISOSURFACE EXTRACTION ===
+  Extracted Mesh: 3912 vertices, 1304 triangles (bounds [-2, 2], res 24x24x24)
+  [SUCCESS] Exported 3D mesh to 'build/demo_sphere.obj'
 ```
-
----
-
-## 🧪 Test Suite Automatica
-La suite copre **65 asserzioni rigorose**:
-- Operazioni e ridimensionamento `DynamicList`.
-- Precedenza operatori (`2 + 3 * 4 == 14`) e associatività a destra (`2 ^ 3 ^ 2 == 512`).
-- Gestione corretta di meno unario (`-5 + 8`, `-(-x)`).
-- Riconoscimento variabili `x, y, z` e mappatura slot.
-- Funzioni matematiche trigonometriche, radici, esponenziali (`sin(x)^2 + cos(x)^2 == 1`).
-- Moltiplicazione implicita (`2x + 3y - 4z`).
-- Campionamento griglia volumetrica 3D ($5 \times 5 \times 5$).
-- Gestione errori di sintassi, parentesi sbilanciate, divisione per zero.

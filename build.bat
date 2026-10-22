@@ -11,15 +11,24 @@ set CC=gcc
 set CFLAGS=-Wall -Wextra -O2 -Iinclude
 set LIBS=-lm
 
-echo [1/2] Compiling test suite: build\run_tests.exe...
-%CC% %CFLAGS% src\dynamic_list.c src\token.c src\parser.c src\evaluator.c tests\test_parser.c -o build\run_tests.exe %LIBS%
+set CORE_SRC=src\dynamic_list.c src\token.c src\parser.c src\evaluator.c src\mesh.c src\marching_cubes.c
+
+echo [1/3] Compiling parser test suite: build\run_tests.exe...
+%CC% %CFLAGS% %CORE_SRC% tests\test_parser.c -o build\run_tests.exe %LIBS%
 if %ERRORLEVEL% neq 0 (
-    echo [ERROR] Test suite compilation failed!
+    echo [ERROR] Parser test suite compilation failed!
     exit /b %ERRORLEVEL%
 )
 
-echo [2/2] Compiling CLI tool: build\engine_parser.exe...
-%CC% %CFLAGS% src\dynamic_list.c src\token.c src\parser.c src\evaluator.c src\main.c -o build\engine_parser.exe %LIBS%
+echo [2/3] Compiling Marching Cubes test suite: build\run_mc_tests.exe...
+%CC% %CFLAGS% %CORE_SRC% tests\test_marching_cubes.c -o build\run_mc_tests.exe %LIBS%
+if %ERRORLEVEL% neq 0 (
+    echo [ERROR] Marching Cubes test suite compilation failed!
+    exit /b %ERRORLEVEL%
+)
+
+echo [3/3] Compiling CLI tool: build\engine_parser.exe...
+%CC% %CFLAGS% %CORE_SRC% src\main.c -o build\engine_parser.exe %LIBS%
 if %ERRORLEVEL% neq 0 (
     echo [ERROR] CLI tool compilation failed!
     exit /b %ERRORLEVEL%
@@ -27,13 +36,25 @@ if %ERRORLEVEL% neq 0 (
 
 echo.
 echo ====================================================
-echo  Running Test Suite
+echo  Running Parser Test Suite
 echo ====================================================
 build\run_tests.exe
 if %ERRORLEVEL% neq 0 (
-    echo [ERROR] Unit tests failed!
+    echo [ERROR] Parser unit tests failed!
     exit /b %ERRORLEVEL%
 )
 
 echo.
-echo Build and tests completed successfully!
+echo ====================================================
+echo  Running Marching Cubes Test Suite
+echo ====================================================
+build\run_mc_tests.exe
+if %ERRORLEVEL% neq 0 (
+    echo [ERROR] Marching Cubes unit tests failed!
+    exit /b %ERRORLEVEL%
+)
+
+echo.
+echo ====================================================
+echo  All builds and tests passed successfully!
+echo ====================================================
