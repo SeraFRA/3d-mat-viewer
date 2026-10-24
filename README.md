@@ -4,6 +4,8 @@ Un motore grafico e computazionale ad altissime prestazioni per la rappresentazi
 
 L'architettura è progettata secondo i principi di massima leggerezza sull'hardware, assenza di dipendenze pesanti e consumo minimo di risorse (RAM < 20 MB, avvio istantaneo, 100+ FPS).
 
+Il progetto è stato realizzato completamente da pochi prompt lasciati in pasto a Gemini 3.8 Flash in un loop agentico su Antigravity CLI.
+
 ---
 
 ## 🏗️ Architettura del Progetto
